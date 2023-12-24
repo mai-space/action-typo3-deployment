@@ -1,0 +1,50 @@
+name: TYPO3 Deployment
+inputs:
+  remoteUsername:
+    description: "Your ssh username like p12345"
+    required: true
+  remoteHost:
+    description: "Your ssh host like p12345.mittwaldserver.info"
+    required: true
+  remotePath:
+    description: "The path to your TYPO3 project on your server like /html/typo3"
+    required: true
+  baseUrl:
+    description: "Your baseurl like https://www.yoursite.com"
+    required: true
+  typo3Context:
+    description: "The context of your TYPO3 project like Production/Mittwald"
+    required: true
+  additionalFileStorages:
+    description: "Additional file storages comma separated like fileadmin,fileadmin2,..."
+    required: false
+    default: 'fileadmin'
+  sshPort:
+    description: "The ssh port of your server like 22"
+    required: false
+    default: '22'
+  phpVersion:
+    description: "The php version of your server like 7.4"
+    required: false
+    default: '8.2'
+  composerBinPath:
+    description: "The path to your composer bin like /bin"
+    required: false
+    default: '/bin'
+description: 'Deploy your TYPO3 project via ssh and rsync'
+branding:
+  icon: 'upload-cloud'
+  color: 'purple'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    REMOTE_USERNAME: ${{ inputs.remoteUsername }}
+    REMOTE_HOST: ${{ inputs.remoteHost }}
+    REMOTE_PATH: ${{ inputs.remotePath }}
+    BASE_URL: ${{ inputs.baseUrl }}
+    TYPO3_CONTEXT: ${{ inputs.typo3Context }}
+    ADDITIONAL_FILE_STORAGES: ${{ inputs.additionalFileStorages }}
+    SSH_PORT: ${{ inputs.sshPort }}
+    PHP_VERSION: ${{ inputs.phpVersion }}
+    COMPOSER_BIN_PATH: ${{ inputs.composerBinPath }}
