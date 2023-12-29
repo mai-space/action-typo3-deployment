@@ -164,12 +164,15 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
     set -e
 
     cd "$DEPLOY_PATH/$DOCUMENT_ROOT"
+    pwd
     ln -sfn "$DOCUMENT_DEPTH_PATH/shared/Data/uploads" "uploads"
     test -d "typo3temp" && rm -rf "typo3temp"
     ln -sfn "$DOCUMENT_DEPTH_PATH/shared/Data/typo3temp" "typo3temp"
     cd "$DEPLOY_PATH"
+    pwd
     test -f "$REMOTE_PATH/shared/Data/.env" && ln -sfn "$REMOTE_PATH/shared/Data/.env" .env
     cd "$DEPLOY_PATH/var"
+    pwd
     ln -sfn "../../../shared/Data/var/labels" "labels"
 EOF
 cmd_success "✓ Symlinks from TYPO3 folders are created"
@@ -184,6 +187,7 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
 
     echo "⧗ Adding +x flag to binaries..."
     cd $BIN_PATH
+    pwd
     chmod +x *
 
     echo "⧗ Fixing folder structure..."
@@ -215,12 +219,15 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
 
     echo "⧗ Remove old releases..."
     cd "$REMOTE_PATH/releases"
+    pwd
     keepReleases=5
     currentReleases=$(find ./* -maxdepth 0 -type d | wc -l)
 
     cd current
+    pwd
     typo3Live=$(pwd -P)
     cd ..
+    pwd
 
     typo3Previous="/"
     if [ -L "previous" ]
@@ -233,15 +240,19 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
     while [ $currentReleases -gt $keepReleases ]
     do
         cd "$(ls -d */|head -n 1)" #cd into first available directory
+        pwd
         currentDir=$(pwd -P)
         cd ..
+        pwd
         if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
         then
             rm -rf $currentDir
         else
             cd "$(ls -d */ | head -n 2 | tail -n 1)" #cd into second available directory
+            pwd
             currentDir=$(pwd -P)
             cd ..
+            pwd
             if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
             then
                 rm -rf $currentDir
