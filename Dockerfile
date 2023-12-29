@@ -9,7 +9,7 @@ LABEL "repository"="https://github.com/mai-space/action-typo3-deployment"
 LABEL "homepage"="https://maispace.de"
 LABEL "maintainer"="Joel Mai <joel@maispace.de>"
 
-RUN apt-get update && apt-get install -y sshpass rsync openssh-client
+RUN apt-get update && apt-get install -y rsync openssh-client
 
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh

@@ -93,8 +93,21 @@ BIN_PATH="${DEPLOY_PATH}/${COMPOSER_BIN_PATH}"
 # DEPLOYMENT
 cmd_describe "⧗ Prepare deployment..."
 
+cmd_run "Creating private ssh key..."
+mkdir -p ~/.ssh
+touch ~/.ssh/id_rsa
+echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+chmod 600 ~/.ssh/id_rsa
+eval `ssh-agent -s`
+ssh-add ~/.ssh/id_rsa
+
+cmd_run "Creating known_hosts file..."
+touch ~/.ssh/known_hosts
+ssh-keyscan -H p656519.webspaceconfig.de >> ~/.ssh/known_hosts
+
 # Check if needed folders are present on remote, if not create them
 cmd_run "Testing if folders exist on remote host..."
+ls ~/.ssh
 for storage in ${ADDITIONAL_FILE_STORAGES//,/ }; do
 ssh -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
     set -e

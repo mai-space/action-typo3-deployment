@@ -1,5 +1,8 @@
 name: TYPO3 Deployment
 inputs:
+  sshPrivateKey:
+    description: "Your ssh private key"
+    required: true
   remoteUsername:
     description: "Your ssh username like p12345"
     required: true
@@ -39,6 +42,7 @@ runs:
   using: 'docker'
   image: 'Dockerfile'
   env:
+    SSH_PRIVATE_KEY: ${{ inputs.sshPrivateKey }}
     REMOTE_USERNAME: ${{ inputs.remoteUsername }}
     REMOTE_HOST: ${{ inputs.remoteHost }}
     REMOTE_PATH: ${{ inputs.remotePath }}
