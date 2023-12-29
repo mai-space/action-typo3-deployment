@@ -107,9 +107,8 @@ ssh-keyscan -H p656519.webspaceconfig.de >> ~/.ssh/known_hosts
 
 # Check if needed folders are present on remote, if not create them
 cmd_run "Testing if folders exist on remote host..."
-ls ~/.ssh
 for storage in ${ADDITIONAL_FILE_STORAGES//,/ }; do
-ssh -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
+ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
     set -e
 
     mkdir -p "$REMOTE_PATH/shared/Data/$storage"
@@ -118,7 +117,7 @@ done
 cmd_success "✓ All needed file storages are present on remote host"
 
 cmd_run "Testing if needed TYPO3 folders exist on remote host..."
-ssh -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
+ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
     set -e
 
     mkdir -p "$DEPLOY_PATH"
@@ -131,17 +130,17 @@ cmd_success "✓ All needed TYPO3 folders are present on remote host"
 
 # Actually deploy the project
 cmd_run "Starting deployment..."
-test -d "$CURRENT_DIR/bin" && rsync -a -e "ssh -p $SSH_PORT" $CURRENT_DIR/bin "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
-test -d "$CURRENT_DIR/config" && rsync -a -e "ssh -p $SSH_PORT" $CURRENT_DIR/config "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
-test -d "$CURRENT_DIR/local_packages" && rsync -a -e "ssh -p $SSH_PORT" $CURRENT_DIR/packages "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
-test -d "$CURRENT_DIR/public" && rsync -a -e "ssh -p $SSH_PORT" $CURRENT_DIR/public "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
-test -d "$CURRENT_DIR/vendor" && rsync -a -e "ssh -p $SSH_PORT" $CURRENT_DIR/vendor "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
+test -d "$CURRENT_DIR/bin" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" $CURRENT_DIR/bin "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
+test -d "$CURRENT_DIR/config" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" $CURRENT_DIR/config "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
+test -d "$CURRENT_DIR/local_packages" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" $CURRENT_DIR/local_packages "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
+test -d "$CURRENT_DIR/public" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" $CURRENT_DIR/public "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
+test -d "$CURRENT_DIR/vendor" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" $CURRENT_DIR/vendor "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
 cmd_success "✓ Project files are deployed"
 
 # Execute commands after deployment
 
 cmd_run "Changing directory permissions..."
-ssh -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
+ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
     set -e
     find "$DEPLOY_PATH" -type d -exec chmod 775 {} \;
 EOF
@@ -149,7 +148,7 @@ cmd_success "✓ Directory permissions are changed"
 
 cmd_run "Creating symlinks from file storages..."
 for storage in ${ADDITIONAL_FILE_STORAGES//,/ }; do
-ssh -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
+ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
     set -e
 
     echo "⧗ Create symlinks and directories for file storage $storage"
@@ -161,7 +160,7 @@ done
 cmd_success "✓ Symlinks from file storages are created"
 
 cmd_run "Creating symlinks from TYPO3 folders..."
-ssh -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
+ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
     set -e
 
     cd "$DEPLOY_PATH/$DOCUMENT_ROOT"
@@ -176,7 +175,7 @@ EOF
 cmd_success "✓ Symlinks from TYPO3 folders are created"
 
 cmd_run "Executing commands after deployment..."
-ssh -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
+ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
     set -e
 
     export TYPO3_CONTEXT="$TYPO3_CONTEXT"
