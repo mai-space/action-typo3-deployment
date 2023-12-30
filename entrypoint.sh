@@ -225,66 +225,84 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
 
     echo "⧗ Flushing TYPO3 Caches..."
     ./typo3 cache:flush
+EOF
+cmd_success "✓ Commands after deployment are executed"
 
-    echo "⧗ Backing up previous release..."
-    cd "$REMOTE_PATH/releases"
-    if [ -L "previous" ]
+cmd_run "Creating post-deploy scripts..."
+touch update_symlinks.sh
+cat << EOF > update_symlinks.sh
+set -e
+
+echo "⧗ Backing up previous release..."
+cd "$REMOTE_PATH/releases"
+if [ -L "previous" ]
+then
+    rm "previous"
+fi
+
+if [ -d "current" ]
+then
+    if [ -L "current" ]
     then
-        rm "previous"
+        ln -s "$(readlink current)" "previous"
     fi
+fi
+EOF
+chmod +x update_symlinks.sh
+confirm "update_symlinks.sh script is created"
 
-    if [ -d "current" ]
-    then
-        if [ -L "current" ]
-        then
-            ln -s "$(readlink current)" "previous"
-        fi
-    fi
+touch remove_old_releases.sh
+cat << EOF > remove_old_releases.sh
+echo "⧗ Remove old releases..."
+cd "$REMOTE_PATH/releases"
+keepReleases=5
+currentReleases=$(find ./* -maxdepth 0 -type d | wc -l)
 
-    echo "⧗ Remove old releases..."
-    cd "$REMOTE_PATH/releases"
-    keepReleases=5
-    currentReleases=$(find ./* -maxdepth 0 -type d | wc -l)
+cd current
+typo3Live=$(pwd -P)
+cd ..
 
-    cd current
-    typo3Live=$(dirs +0)
+typo3Previous="/"
+if [ -L "previous" ]
+then
+    cd previous
+    typo3Previous=$(pwd -P)
+    cd ..
+fi
+
+while [ $currentReleases -gt $keepReleases ]
+do
+    cd "$(ls -d */|head -n 1)" #cd into first available directory
+    currentDir=$(pwd -P)
     cd ..
 
-    typo3Previous="/"
-    if [ -L "previous" ]
+    if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
     then
-        cd previous
-        typo3Previous=$(dirs +0)
-        cd ..
-    fi
-
-    while [ $currentReleases -gt $keepReleases ]
-    do
-        cd "$(ls -d */|head -n 1)" #cd into first available directory
-        currentDir=$(dirs +0)
+        rm -rf $currentDir
+    else
+        cd "$(ls -d */ | head -n 2 | tail -n 1)" #cd into second available directory
+        currentDir=$(pwd -P)
         cd ..
 
         if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
         then
             rm -rf $currentDir
         else
-            cd "$(ls -d */ | head -n 2 | tail -n 1)" #cd into second available directory
-            currentDir=$(dirs +0)
-            cd ..
-
-            if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
-            then
-                rm -rf $currentDir
-            else
-                echo "Something is weird with the folder structure, please check manually"
-                exit 1
-            fi
+            echo "Something is weird with the folder structure, please check manually"
+            exit 1
         fi
-        currentReleases=$(find ./* -maxdepth 0 -type d | wc -l)
-    done
+    fi
+    currentReleases=$(find ./* -maxdepth 0 -type d | wc -l)
+done
 
-    ln -sfn "./$DATE_NOW" "current"
+ln -sfn "./$DATE_NOW" "current"
 EOF
-cmd_success "✓ Commands after deployment are executed"
+chmod +x remove_old_releases.sh
+confirm "Post-deploy scripts are created"
+
+cmd_run "Running post-deploy scripts..."
+ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT < "$CURRENT_DIR/update_symlinks.sh"
+ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT < "$CURRENT_DIR/remove_old_releases.sh"
+cmd_success "✓ Post-deploy scripts are executed"
 
 cmd_success "✓ Completed ${GITHUB_WORKFLOW}:${GITHUB_ACTION}"
