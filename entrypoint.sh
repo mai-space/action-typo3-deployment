@@ -106,45 +106,6 @@ touch ~/.ssh/known_hosts
 ssh-keyscan -H p656519.webspaceconfig.de >> ~/.ssh/known_hosts
 confirm "Known_hosts file is created"
 
-cmd_run "Testing connection to remote host..."
-ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
-    set -e
-    echo "✓ Connection to remote host established"
-    echo "⧗ Checking if changing directories stack is enabled..."
-    if shopt -q autocd; then
-      echo "✓ Directory stack tracking is already enabled."
-    else
-      echo "⧗ Enabling directory stack tracking..."
-      shopt -s autocd
-      echo "✓ Directory stack tracking is now enabled."
-    fi
-
-    echo "⧗ Testing directory stack tracking..."
-    cd "$REMOTE_PATH"
-    current_dir=$(dirs +0)
-    if [ "$current_dir" != "$REMOTE_PATH" ]; then
-      echo $current_dir
-      echo "Something is wrong with directory stack tracking, please check manually"
-      exit 1
-    fi
-    cd "$REMOTE_PATH/releases"
-    current_dir=$(dirs +0)
-    if [ "$current_dir" != "$REMOTE_PATH/releases" ]; then
-      echo $current_dir
-      echo "Something is wrong with directory stack tracking, please check manually"
-      exit 1
-    fi
-    cd "$REMOTE_PATH/shared"
-    current_dir=$(dirs +0)
-    if [ "$current_dir" != "$REMOTE_PATH/shared" ]; then
-      echo $current_dir
-      echo "Something is wrong with directory stack tracking, please check manually"
-      exit 1
-    fi
-    echo "✓ Directory stack tracking is working."
-EOF
-confirm "Connection to remote host established"
-
 # Check if needed folders are present on remote, if not create them
 cmd_run "Testing if file storages exist on remote host..."
 for storage in ${ADDITIONAL_FILE_STORAGES//,/ }; do
