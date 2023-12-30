@@ -65,29 +65,22 @@ function confirm() {
     echo ""
 }
 
-function prompt_user() {
-    msg="$*"
-    line=$(echo "$msg" | sed 's/./─/g')
-    topedge="${PROMPT}┌─$line─┐${NC}"
-    botedge="${PROMPT}└─$line─┘${NC}"
-    msg="${PROMPT}│${NC} $* ${PROMPT}│${NC}"
-    echo -e "$topedge"
+function info() {
+    msg="${PROMPT}> $*${NC}"
     echo -e "$msg"
-    echo -e "$botedge"
-    echo ""
 }
 
 # ECHO USED ENVIRONMENT VARIABLES
 DATE_NOW=$(date +"%Y_%m_%d-%H_%M")
-cmd_run "Using environment variables for deployment: ${DATE_NOW}"
-cmd_run "SSH CONFIG: ${REMOTE_USERNAME}@${REMOTE_HOST}:${SSH_PORT}"
-cmd_run "TO SITE: ${BASE_URL} with TYPO3_CONTEXT=${TYPO3_CONTEXT} and PHP_VERSION=${PHP_VERSION}"
-cmd_run "Expect TYPO3 project at: ${REMOTE_PATH}"
-cmd_run "Expect TYPO3 releases at: ${REMOTE_PATH}/releases"
-cmd_run "Expect TYPO3 shared at: ${REMOTE_PATH}/shared"
-cmd_run "Expect file storages: ${ADDITIONAL_FILE_STORAGES}"
+info "Using environment variables for deployment: ${DATE_NOW}"
+info "SSH CONFIG: ${REMOTE_USERNAME}@${REMOTE_HOST}:${SSH_PORT}"
+info "TO SITE: ${BASE_URL} with TYPO3_CONTEXT=${TYPO3_CONTEXT} and PHP_VERSION=${PHP_VERSION}"
+info "TYPO3 project at: ${REMOTE_PATH}"
+info "TYPO3 releases at: ${REMOTE_PATH}/releases"
+info "TYPO3 shared at: ${REMOTE_PATH}/shared"
+info "File storages: ${ADDITIONAL_FILE_STORAGES}"
 
-cmd_describe "⧗ Building path variables"
+cmd_run "Building path variables"
 CURRENT_DIR=$(pwd)
 DOCUMENT_ROOT="public"
 DOCUMENT_DEPTH_PATH="../../.."
@@ -97,7 +90,7 @@ PUBLIC_PATH="${DEPLOY_PATH}/${DOCUMENT_ROOT}"
 BIN_PATH="${DEPLOY_PATH}/${COMPOSER_BIN_PATH}"
 
 # DEPLOYMENT
-cmd_describe "⧗ Prepare deployment..."
+cmd_run "Preparing deployment..."
 
 cmd_run "Creating private ssh key..."
 mkdir -p ~/.ssh
@@ -106,10 +99,12 @@ echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 eval `ssh-agent -s`
 ssh-add ~/.ssh/id_rsa
+confirm "Private ssh key is created"
 
 cmd_run "Creating known_hosts file..."
 touch ~/.ssh/known_hosts
 ssh-keyscan -H p656519.webspaceconfig.de >> ~/.ssh/known_hosts
+confirm "Known_hosts file is created"
 
 cmd_run "Testing connection to remote host..."
 ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
@@ -146,8 +141,6 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
       echo "Something is wrong with directory stack tracking, please check manually"
       exit 1
     fi
-
-
     echo "✓ Directory stack tracking is working."
 EOF
 confirm "Connection to remote host established"
