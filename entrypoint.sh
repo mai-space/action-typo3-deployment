@@ -60,7 +60,7 @@ function cmd_run() {
 }
 
 function confirm() {
-    msg="${SUCCESS}» $*${NC}"
+    msg="${SUCCESS}✓ $*${NC}"
     echo -e "$msg"
     echo ""
 }
@@ -137,15 +137,15 @@ cmd_success "✓ All needed TYPO3 folders are present on remote host"
 # Actually deploy the project
 cmd_run "Starting deployment..."
 test -d "$CURRENT_DIR/bin" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable $CURRENT_DIR/bin "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
-confirm "✓ Binaries are deployed"
+confirm "Binaries are deployed"
 test -d "$CURRENT_DIR/config" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable $CURRENT_DIR/config "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
-confirm "✓ Configuration files are deployed"
+confirm "Configuration files are deployed"
 test -d "$CURRENT_DIR/local_packages" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable $CURRENT_DIR/local_packages "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
-confirm "✓ Local packages are deployed"
+confirm "Local packages are deployed"
 test -d "$CURRENT_DIR/public" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable $CURRENT_DIR/public "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
-confirm "✓ Public files are deployed"
+confirm "Public files are deployed"
 test -d "$CURRENT_DIR/vendor" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable $CURRENT_DIR/vendor "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
-confirm "✓ Vendor files are deployed"
+confirm "Vendor files are deployed"
 cmd_success "✓ Project files are deployed"
 
 # Execute commands after deployment
