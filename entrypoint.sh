@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 # COLORS
@@ -231,6 +231,7 @@ cmd_success "✓ Commands after deployment are executed"
 cmd_run "Creating post-deploy scripts..."
 touch update_symlinks.sh
 cat << EOF > update_symlinks.sh
+#!/usr/bin/env bash
 set -e
 
 echo "⧗ Backing up previous release..."
@@ -251,7 +252,14 @@ if [ -d "current" ]
 then
     if [ -L "current" ]
     then
-        ln -s "$(readlink current)" "previous"
+        current_target=$(readlink "current")
+        if [ -n "$current_target" ] && [ -d "$current_target" ]
+        then
+            ln -s "$current_target" "previous"
+        else
+            echo "Error: Invalid target for symbolic link 'current'. Target is empty or does not exist."
+            exit 1
+        fi
     fi
 fi
 EOF
@@ -260,6 +268,9 @@ confirm "update_symlinks.sh script is created"
 
 touch remove_old_releases.sh
 cat << EOF > remove_old_releases.sh
+#!/usr/bin/env bash
+set -e
+
 echo "⧗ Remove old releases..."
 cd "$REMOTE_PATH/releases"
 keepReleases=5
@@ -307,9 +318,30 @@ EOF
 chmod +x remove_old_releases.sh
 confirm "Post-deploy scripts are created"
 
-cmd_run "Running post-deploy scripts..."
-ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT < "$CURRENT_DIR/update_symlinks.sh"
-ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT < "$CURRENT_DIR/remove_old_releases.sh"
-cmd_success "✓ Post-deploy scripts are executed"
+cmd_run "Deploying update_symlinks.sh..."
+rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable update_symlinks.sh "$REMOTE_USERNAME@$REMOTE_HOST:$REMOTE_PATH/releases"
+
+cmd_run "Deploying remove_old_releases.sh..."
+confirm "update_symlinks.sh script is deployed"
+rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable remove_old_releases.sh "$REMOTE_USERNAME@$REMOTE_HOST:$REMOTE_PATH/releases"
+confirm "remove_old_releases.sh script is deployed"
+
+cmd_run "Running post-deploy scripts on the remote..."
+ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
+    set -e
+
+    cd "$REMOTE_PATH/releases"
+
+    ./update_symlinks.sh
+    echo "✓ update_symlinks is executed"
+    rm update_symlinks.sh
+    echo "✓ update_symlinks script is removed"
+
+    ./remove_old_releases.sh
+    echo "✓ remove_old_releases is executed"
+    rm remove_old_releases.sh
+    echo "✓ remove_old_releases is removed"
+EOF
+confirm "✓ Post-deploy scripts are executed"
 
 cmd_success "✓ Completed ${GITHUB_WORKFLOW}:${GITHUB_ACTION}"
