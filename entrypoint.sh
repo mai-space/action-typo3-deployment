@@ -103,7 +103,7 @@ confirm "Private ssh key is created"
 
 cmd_run "Creating known_hosts file..."
 touch ~/.ssh/known_hosts
-ssh-keyscan -H p656519.webspaceconfig.de >> ~/.ssh/known_hosts
+ssh-keyscan -H ${REMOTE_HOST} >> ~/.ssh/known_hosts
 confirm "Known_hosts file is created"
 
 # Check if needed folders are present on remote, if not create them
