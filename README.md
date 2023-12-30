@@ -7,18 +7,41 @@ A GitHub Action to deploy your TYPO3 project via ssh and rsync to your server
 
 ## ✨ FEATURES
 
-- ✅ 
+- ✅ Deploy your TYPO3 Project via ssh and rsync
+- ✅ Use a private key to authenticate
+- ✅ Supports custom composer bin path
+- ✅ Use a custom ssh port
+- ✅ Use it context dependent
+- ✅ Supports custom TYPO3 file storages
+- ✅ Supports custom PHP versions
+- ✅ Clean and readable structure on your server
+- ✅ Updates TYPO3 assets, like database, languages and cache after each deployment
 
 ## 🔧 HOW TO USE
 
 In this section you will find a quick guide on how to use this action.
 
-### 🧪 INSTALLATION & ADAPTATION & CONFIGURATION
+### 🧪 CONFIGURATION
 
-### 🚀 DEPLOYMENT
+In your `.github/workflows` folder create a new file, e.g. `deploy.yml` and add the following content:
 
-## 🔮 DEVELOPER GUIDE
-
-## 🫂 HOW TO CONTRIBUTE
+```yaml
+  - name: Deployment
+    uses: mai-space/action-typo3-deployment/@main
+    with:
+      sshPrivateKey: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+      remoteUsername: 'your-ssh-user'
+      remoteHost: 'your.host.server'
+      remotePath: '/path/to/your/typo3-root'
+      baseUrl: 'https://www.your-url.dev'
+      typo3Context: 'YOUR_CONTEXT/YOUR_HOSTER'
+      additionalFileStorages: 'fileadmin,fileadmin2,...'
+      sshPort: 22
+      phpVersion: '8.2'
+      composerBinPath: '/bin'
+```
 
 ## 🧡 SPECIAL THANKS
+
+This Action is inspired by the workflows of my colleagues at [IW Medien](https://www.iwmedien.de/).
+Especially thank you, Sune Donath for your great work and support!
