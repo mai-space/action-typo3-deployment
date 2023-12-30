@@ -184,7 +184,6 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
     set -e
 
     cd "$DEPLOY_PATH/$DOCUMENT_ROOT"
-    echo "☇ Changed Path to $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     echo "» Create symlinks and directories for uploads folder"
     ln -sfn "$DOCUMENT_DEPTH_PATH/shared/Data/uploads" "uploads"
     echo "✓ Symlinks for uploads folder successfully created!"
@@ -197,7 +196,6 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
     echo ""
 
     cd "$DEPLOY_PATH"
-    echo "☇ Changed Path to $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     echo "» Create symlinks and directories for .env file"
     test -f "$REMOTE_PATH/shared/Data/.env" && ln -sfn "$REMOTE_PATH/shared/Data/.env" .env
     echo "✓ Symlinks for .env file successfully created!"
@@ -205,7 +203,6 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
 
     echo "» Create symlinks and directories for labels folder"
     cd "$DEPLOY_PATH/var"
-    echo "☇ Changed Path to $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     ln -sfn "../../../shared/Data/var/labels" "labels"
     echo "✓ Symlinks for labels folder successfully created!"
 EOF
@@ -220,7 +217,6 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
 
     echo "⧗ Adding +x flag to binaries..."
     cd $BIN_PATH
-    echo "☇ Changed Path to $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"  # Get the directory of the executing script
     chmod +x *
 
     echo "⧗ Fixing folder structure..."
@@ -252,28 +248,25 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
 
     echo "⧗ Remove old releases..."
     cd "$REMOTE_PATH/releases"
-    echo "☇ Changed Path to $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     keepReleases=5
     currentReleases=$(find ./* -maxdepth 0 -type d | wc -l)
 
     cd current
-    echo "☇ Changed Path to $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    typo3Live=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+    typo3Live=$(pwd -P)
     cd ..
 
     typo3Previous="/"
     if [ -L "previous" ]
     then
         cd previous
-        typo3Previous=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+        typo3Previous=$(pwd -P)
         cd ..
     fi
 
     while [ $currentReleases -gt $keepReleases ]
     do
         cd "$(ls -d */|head -n 1)" #cd into first available directory
-        echo "☇ Changed Path to $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-        currentDir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+        currentDir=$(pwd -P)
         cd ..
 
         if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
@@ -281,8 +274,7 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
             rm -rf $currentDir
         else
             cd "$(ls -d */ | head -n 2 | tail -n 1)" #cd into second available directory
-            echo "☇ Changed Path to $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-            currentDir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+            currentDir=$(pwd -P)
             cd ..
 
             if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
