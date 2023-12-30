@@ -135,17 +135,26 @@ EOF
 cmd_success "✓ All needed TYPO3 folders are present on remote host"
 
 # Actually deploy the project
-cmd_run "Starting deployment..."
+cmd_run "Deploying bin dir..."
 test -d "$CURRENT_DIR/bin" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable $CURRENT_DIR/bin "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
 confirm "Binaries are deployed"
+
+cmd_run "Deploying config dir..."
 test -d "$CURRENT_DIR/config" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable $CURRENT_DIR/config "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
 confirm "Configuration files are deployed"
+
+cmd_run "Deploying local packages..."
 test -d "$CURRENT_DIR/local_packages" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable $CURRENT_DIR/local_packages "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
 confirm "Local packages are deployed"
+
+cmd_run "Deploying public dir..."
 test -d "$CURRENT_DIR/public" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable $CURRENT_DIR/public "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
 confirm "Public files are deployed"
+
+cmd_run "Deploying vendor dir..."
 test -d "$CURRENT_DIR/vendor" && rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable $CURRENT_DIR/vendor "$REMOTE_USERNAME@$REMOTE_HOST:$DEPLOY_PATH"
 confirm "Vendor files are deployed"
+
 cmd_success "✓ Project files are deployed"
 
 # Execute commands after deployment
@@ -175,22 +184,28 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
     set -e
 
     cd "$DEPLOY_PATH/$DOCUMENT_ROOT"
-    pwd
-    echo "⧗ Create symlinks and directories for uploads folder"
+    echo "☇ Changed Path to ${pwd}"
+    echo "» Create symlinks and directories for uploads folder"
     ln -sfn "$DOCUMENT_DEPTH_PATH/shared/Data/uploads" "uploads"
     echo "✓ Symlinks for uploads folder successfully created!"
-    echo "⧗ Create symlinks and directories for typo3temp folder"
+    echo ""
+
+    echo "» Create symlinks and directories for typo3temp folder"
     test -d "typo3temp" && rm -rf "typo3temp"
     ln -sfn "$DOCUMENT_DEPTH_PATH/shared/Data/typo3temp" "typo3temp"
     echo "✓ Symlinks for typo3temp folder successfully created!"
+    echo ""
+
     cd "$DEPLOY_PATH"
-    pwd
-    echo "⧗ Create symlinks and directories for .env file"
+    echo "☇ Changed Path to ${pwd}"
+    echo "» Create symlinks and directories for .env file"
     test -f "$REMOTE_PATH/shared/Data/.env" && ln -sfn "$REMOTE_PATH/shared/Data/.env" .env
     echo "✓ Symlinks for .env file successfully created!"
-    echo "⧗ Create symlinks and directories for labels folder"
+    echo ""
+
+    echo "» Create symlinks and directories for labels folder"
     cd "$DEPLOY_PATH/var"
-    pwd
+    echo "☇ Changed Path to ${pwd}"
     ln -sfn "../../../shared/Data/var/labels" "labels"
     echo "✓ Symlinks for labels folder successfully created!"
 EOF
@@ -206,7 +221,7 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
 
     echo "⧗ Adding +x flag to binaries..."
     cd $BIN_PATH
-    pwd
+    echo "☇ Changed Path to ${pwd}"
     chmod +x *
 
     echo "⧗ Fixing folder structure..."
@@ -238,15 +253,15 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
 
     echo "⧗ Remove old releases..."
     cd "$REMOTE_PATH/releases"
-    pwd
+    echo "☇ Changed Path to ${pwd}"
     keepReleases=5
     currentReleases=$(find ./* -maxdepth 0 -type d | wc -l)
 
     cd current
-    pwd
+    echo "☇ Changed Path to ${pwd}"
     typo3Live=$(pwd -P)
     cd ..
-    pwd
+    echo "☇ Changed Path to ${pwd}"
 
     typo3Previous="/"
     if [ -L "previous" ]
@@ -259,19 +274,19 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
     while [ $currentReleases -gt $keepReleases ]
     do
         cd "$(ls -d */|head -n 1)" #cd into first available directory
-        pwd
+        echo "☇ Changed Path to ${pwd}"
         currentDir=$(pwd -P)
         cd ..
-        pwd
+        echo "☇ Changed Path to ${pwd}"
         if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
         then
             rm -rf $currentDir
         else
             cd "$(ls -d */ | head -n 2 | tail -n 1)" #cd into second available directory
-            pwd
+            echo "☇ Changed Path to ${pwd}"
             currentDir=$(pwd -P)
             cd ..
-            pwd
+            echo "☇ Changed Path to ${pwd}"
             if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
             then
                 rm -rf $currentDir
