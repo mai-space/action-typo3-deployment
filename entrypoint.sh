@@ -252,21 +252,21 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
     currentReleases=$(find ./* -maxdepth 0 -type d | wc -l)
 
     cd current
-    typo3Live=$(pwd -P)
+    typo3Live=\$PWD
     cd ..
 
     typo3Previous="/"
     if [ -L "previous" ]
     then
         cd previous
-        typo3Previous=$(pwd -P)
+        typo3Previous=\$PWD
         cd ..
     fi
 
     while [ $currentReleases -gt $keepReleases ]
     do
         cd "$(ls -d */|head -n 1)" #cd into first available directory
-        currentDir=$(pwd -P)
+        currentDir=\$PWD
         cd ..
 
         if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
@@ -274,7 +274,7 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
             rm -rf $currentDir
         else
             cd "$(ls -d */ | head -n 2 | tail -n 1)" #cd into second available directory
-            currentDir=$(pwd -P)
+            currentDir=\$PWD
             cd ..
 
             if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
