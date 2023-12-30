@@ -12,5 +12,9 @@ LABEL "maintainer"="Joel Mai <joel@maispace.de>"
 RUN apt-get update && apt-get install -y rsync openssh-client
 
 COPY entrypoint.sh /
+COPY update_symlinks.sh /
+COPY remove_old_releases.sh /
 RUN chmod +x /entrypoint.sh
+RUN chmod +x /update_symlinks.sh
+RUN chmod +x /remove_old_releases.sh
 ENTRYPOINT ["/entrypoint.sh"]

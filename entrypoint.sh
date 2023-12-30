@@ -228,124 +228,19 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
 EOF
 cmd_success "✓ Commands after deployment are executed"
 
-cmd_run "Creating post-deploy scripts..."
-touch update_symlinks.sh
-cat << EOF > update_symlinks.sh
-#!/usr/bin/env bash
-set -e
-
-echo "⧗ Backing up previous release..."
-cd "$REMOTE_PATH/releases"
-ls -la
-
-if [ -L "previous" ]
-then
-    previous_target=$(readlink "previous")
-    if [ -z "$previous_target" ]
-    then
-        echo "Error: Target for symbolic link 'previous' is empty."
-        exit 1
-    elif [ ! -d "$previous_target" ]
-    then
-        echo "Error: Target directory for symbolic link 'previous' does not exist: $previous_target"
-        exit 1
-    else
-        rm "previous"
-        echo "Removed 'previous' symbolic link."
-    fi
-else
-    echo "Symbolic link 'previous' does not exist."
-fi
-
-if [ -d "current" ]
-then
-    if [ -L "current" ]
-    then
-        current_target=$(readlink "current")
-        if [ -z "$current_target" ]
-        then
-            echo "Error: Target for symbolic link 'current' is empty."
-            exit 1
-        elif [ ! -d "$current_target" ]
-        then
-            echo "Error: Target directory for symbolic link 'current' does not exist: $current_target"
-            exit 1
-        else
-            ln -s "$current_target" "previous"
-            echo "Created 'previous' symbolic link."
-        fi
-    fi
-else
-    echo "Directory 'current' does not exist."
-fi
-EOF
-chmod +x update_symlinks.sh
-confirm "update_symlinks.sh script is created"
-
-touch remove_old_releases.sh
-cat << EOF > remove_old_releases.sh
-#!/usr/bin/env bash
-set -e
-
-echo "⧗ Remove old releases..."
-cd "$REMOTE_PATH/releases"
-keepReleases=5
-currentReleases=$(find ./* -maxdepth 0 -type d | wc -l)
-
-cd current
-typo3Live=$(pwd -P)
-cd ..
-
-typo3Previous="/"
-if [ -L "previous" ]
-then
-    cd previous
-    typo3Previous=$(pwd -P)
-    cd ..
-fi
-
-while [ $currentReleases -gt $keepReleases ]
-do
-    cd "$(ls -d */|head -n 1)" #cd into first available directory
-    currentDir=$(pwd -P)
-    cd ..
-
-    if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
-    then
-        rm -rf $currentDir
-    else
-        cd "$(ls -d */ | head -n 2 | tail -n 1)" #cd into second available directory
-        currentDir=$(pwd -P)
-        cd ..
-
-        if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
-        then
-            rm -rf $currentDir
-        else
-            echo "Something is weird with the folder structure, please check manually"
-            exit 1
-        fi
-    fi
-    currentReleases=$(find ./* -maxdepth 0 -type d | wc -l)
-done
-
-ln -sfn "./$DATE_NOW" "current"
-EOF
-chmod +x remove_old_releases.sh
-confirm "Post-deploy scripts are created"
-
 cmd_run "Deploying update_symlinks.sh..."
-rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable update_symlinks.sh "$REMOTE_USERNAME@$REMOTE_HOST:$REMOTE_PATH/releases"
+rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable /update_symlinks.sh "$REMOTE_USERNAME@$REMOTE_HOST:$REMOTE_PATH/releases"
+confirm "update_symlinks.sh script is deployed"
 
 cmd_run "Deploying remove_old_releases.sh..."
-confirm "update_symlinks.sh script is deployed"
-rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable remove_old_releases.sh "$REMOTE_USERNAME@$REMOTE_HOST:$REMOTE_PATH/releases"
+rsync -a -e "ssh -i /github/home/.ssh/id_rsa -o UserKnownHostsFile=/github/home/.ssh/known_hosts -p $SSH_PORT" --stats --human-readable /remove_old_releases.sh "$REMOTE_USERNAME@$REMOTE_HOST:$REMOTE_PATH/releases"
 confirm "remove_old_releases.sh script is deployed"
 
 cmd_run "Running post-deploy scripts on the remote..."
 ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
     set -e
 
+    echo "⧗ Backing up previous release..."
     cd "$REMOTE_PATH/releases"
 
     ./update_symlinks.sh
@@ -353,11 +248,17 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
     rm update_symlinks.sh
     echo "✓ update_symlinks script is removed"
 
+    echo "⧗ Remove old releases..."
+    cd "$REMOTE_PATH/releases"
+
     ./remove_old_releases.sh
     echo "✓ remove_old_releases is executed"
     rm remove_old_releases.sh
     echo "✓ remove_old_releases is removed"
-EOF
-confirm "✓ Post-deploy scripts are executed"
 
-cmd_success "✓ Completed ${GITHUB_WORKFLOW}:${GITHUB_ACTION}"
+    ln -sfn "./$DATE_NOW" "current"
+    echo "✓ Symlink 'current' is updated"
+EOF
+
+cmd_success "Your TYPO3 project is deployed"
+confirm "✓ Completed ${GITHUB_WORKFLOW}:${GITHUB_ACTION}"
