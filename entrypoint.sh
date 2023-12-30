@@ -111,8 +111,49 @@ cmd_run "Creating known_hosts file..."
 touch ~/.ssh/known_hosts
 ssh-keyscan -H p656519.webspaceconfig.de >> ~/.ssh/known_hosts
 
+cmd_run "Testing connection to remote host..."
+ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
+    set -e
+    echo "✓ Connection to remote host established"
+    echo "⧗ Checking if changing directories stack is enabled..."
+    if shopt -q autocd; then
+      echo "✓ Directory stack tracking is already enabled."
+    else
+      echo "⧗ Enabling directory stack tracking..."
+      shopt -s autocd
+      echo "✓ Directory stack tracking is now enabled."
+    fi
+
+    echo "⧗ Testing directory stack tracking..."
+    cd "$REMOTE_PATH"
+    current_dir=$(dirs +0)
+    if [ "$current_dir" != "$REMOTE_PATH" ]; then
+      echo $current_dir
+      echo "Something is wrong with directory stack tracking, please check manually"
+      exit 1
+    fi
+    cd "$REMOTE_PATH/releases"
+    current_dir=$(dirs +0)
+    if [ "$current_dir" != "$REMOTE_PATH/releases" ]; then
+      echo $current_dir
+      echo "Something is wrong with directory stack tracking, please check manually"
+      exit 1
+    fi
+    cd "$REMOTE_PATH/shared"
+    current_dir=$(dirs +0)
+    if [ "$current_dir" != "$REMOTE_PATH/shared" ]; then
+      echo $current_dir
+      echo "Something is wrong with directory stack tracking, please check manually"
+      exit 1
+    fi
+
+
+    echo "✓ Directory stack tracking is working."
+EOF
+confirm "Connection to remote host established"
+
 # Check if needed folders are present on remote, if not create them
-cmd_run "Testing if folders exist on remote host..."
+cmd_run "Testing if file storages exist on remote host..."
 for storage in ${ADDITIONAL_FILE_STORAGES//,/ }; do
 ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
     set -e
@@ -120,7 +161,7 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
     mkdir -p "$REMOTE_PATH/shared/Data/$storage"
 EOF
 done
-cmd_success "✓ All needed file storages are present on remote host"
+confirm "All needed file storages are present on remote host"
 
 cmd_run "Testing if needed TYPO3 folders exist on remote host..."
 ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
@@ -132,7 +173,7 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
     mkdir -p "$REMOTE_PATH/shared/Data/uploads"
     mkdir -p "$REMOTE_PATH/shared/Data/var/labels"
 EOF
-cmd_success "✓ All needed TYPO3 folders are present on remote host"
+confirm "All needed TYPO3 folders are present on remote host"
 
 # Actually deploy the project
 cmd_run "Deploying bin dir..."
@@ -164,7 +205,7 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
     set -e
     find "$DEPLOY_PATH" -type d -exec chmod 775 {} \;
 EOF
-cmd_success "✓ Directory permissions are changed"
+confirm "Directory permissions are changed"
 
 cmd_run "Creating symlinks from file storages..."
 for storage in ${ADDITIONAL_FILE_STORAGES//,/ }; do
@@ -252,21 +293,21 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
     currentReleases=$(find ./* -maxdepth 0 -type d | wc -l)
 
     cd current
-    typo3Live=\$PWD
+    typo3Live=$(dirs +0)
     cd ..
 
     typo3Previous="/"
     if [ -L "previous" ]
     then
         cd previous
-        typo3Previous=\$PWD
+        typo3Previous=$(dirs +0)
         cd ..
     fi
 
     while [ $currentReleases -gt $keepReleases ]
     do
         cd "$(ls -d */|head -n 1)" #cd into first available directory
-        currentDir=\$PWD
+        currentDir=$(dirs +0)
         cd ..
 
         if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
@@ -274,7 +315,7 @@ ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNA
             rm -rf $currentDir
         else
             cd "$(ls -d */ | head -n 2 | tail -n 1)" #cd into second available directory
-            currentDir=\$PWD
+            currentDir=$(dirs +0)
             cd ..
 
             if [ "$currentDir" != "$typo3Live" ] && [ "$currentDir" != "$typo3Previous" ]
