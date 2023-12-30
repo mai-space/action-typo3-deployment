@@ -237,7 +237,14 @@ echo "⧗ Backing up previous release..."
 cd "$REMOTE_PATH/releases"
 if [ -L "previous" ]
 then
-    rm "previous"
+    previous_target=$(readlink "previous")
+    if [ -n "$previous_target" ] && [ -d "$previous_target" ]
+    then
+        rm "previous"
+    else
+        echo "Error: Invalid target for symbolic link 'previous'. Target is empty or does not exist."
+        exit 1
+    fi
 fi
 
 if [ -d "current" ]
