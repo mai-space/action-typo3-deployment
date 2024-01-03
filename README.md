@@ -21,6 +21,18 @@ A GitHub Action to deploy your TYPO3 project via ssh and rsync to your server
 
 In this section you will find a quick guide on how to use this action.
 
+### ✔️ Prerequisites
+
+Before you run into issues with your deployment, here are a few steps to take:
+
+1. Make sure that you have created a private and public ssh key (without Passphrase).
+2. On your Server in the folder ~/.ssh/, create a file, if it does not exist already `authorized_keys`.
+3. Paste your public key contents there. Alternatively you could run:
+   ```sh
+   ssh-copy-id -i ~/path/to/yourPrivateKey yourServerUser@yourServerHost
+   ```
+4. Add the contents of your Private Key to your Projects Repository Secrets as `DEPLOY_PRIVATE_KEY`.
+
 ### 🧪 CONFIGURATION
 
 In your `.github/workflows` folder create a new file, e.g. `deploy.yml` and add the following content:
