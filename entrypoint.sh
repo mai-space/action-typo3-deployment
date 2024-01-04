@@ -117,6 +117,20 @@ EOF
 done
 confirm "All needed file storages are present on remote host"
 
+# Check if the .env file exists
+ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
+    set -e
+
+    if [ ! -e "$REMOTE_PATH/shared/Data/$storage/.env" ]; then
+      echo "Creating .env file in $storage..."
+      touch "$REMOTE_PATH/shared/Data/$storage/.env"
+      echo "Your custom .env file content here" > "$REMOTE_PATH/shared/Data/$storage/.env"
+      echo ".env file created."
+    else
+      echo ".env file already exists in $storage."
+    fi
+EOF
+
 cmd_run "Testing if needed TYPO3 folders exist on remote host..."
 ssh -i ~/.ssh/id_rsa -o UserKnownHostsFile=~/.ssh/known_hosts -T "$REMOTE_USERNAME@$REMOTE_HOST" -p $SSH_PORT << EOF
     set -e
